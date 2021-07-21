@@ -27,19 +27,19 @@ variable "linked_sql_server" {
   NB They will use the SHIR created by default.
   EOT
   default = {
-    msa-dev-sql2 = "integrated security=True;data source=msa-dev-sql2;initial catalog=MyDBName"
+    server_name = "integrated security=True;data source=server_name;initial catalog=MyDBName"
   }
 }
 
-variable "subnet" {
-  type        = map(string)
-  description = "Details for subnet to connect SHIR VM to"
-  default = {
-    name                 = "default"
-    virtual_network_name = "sql-sysprep-test-vnet"
-    resource_group_name  = "sql-sysprep-test"
-  }
-}
+# variable "subnet" {
+#   type        = map(string)
+#   description = "Details for subnet to connect SHIR VM to"
+#   default = {
+#     name                 = "default"
+#     virtual_network_name = "sql-sysprep-test-vnet"
+#     resource_group_name  = "sql-sysprep-test"
+#   }
+# }
 
 variable "pipeline_name" {
   default = "ProcessPASImportPipeline"
