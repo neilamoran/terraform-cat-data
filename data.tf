@@ -15,8 +15,8 @@ data "azurerm_client_config" "current" {}
 
 # get subnet id
 
-data "azurerm_subnet" "subnet" {
-  name                 = var.subnet.name
-  virtual_network_name = var.subnet.virtual_network_name
-  resource_group_name  = var.subnet.resource_group_name
-}
+# data "azurerm_subnet" "subnet" {
+#   name                 = var.subnet.name
+#   virtual_network_name = var.subnet.virtual_network_name
+#   resource_group_name  = var.subnet.resource_group_name
+# }
