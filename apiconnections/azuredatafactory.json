@@ -1,0 +1,45 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "connectionAPIName": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "clientSecret": {
+        "type": "securestring"
+      }
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Web/connections",
+        "apiVersion": "2018-07-01-preview",
+        "name": "[parameters('connectionAPIName')]",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "displayName": "[parameters('connectionAPIName')]",
+          "parameterValues": {
+            "token:clientId": "[parameters('clientId')]",
+            "token:clientSecret": "[parameters('clientSecret')]",
+            "token:TenantId": "[subscription().tenantId]",
+            "token:grantType": "client_credentials"
+          },
+          "api": {
+            "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuredatafactory')]"
+          }
+        }
+      }
+    ],
+    "outputs": {
+        "apiConnection": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Web/connections', parameters('connectionAPIName'))).api.id]"
+        },
+        "resourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/connections', parameters('connectionAPIName'))]"
+        }
+    }
+}

@@ -1,0 +1,308 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Catch_Scope": {
+                "actions": {
+                    "Compose_catch_scope_ErrorArray": {
+                        "inputs": [
+                            {
+                                "message": "@variables('ErrorMessage')",
+                                "policyKey": "@variables('PolicyKey')"
+                            }
+                        ],
+                        "runAfter": {
+                            "Set_catch_var_-_ErrorMessage": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "Error_Response": {
+                        "inputs": {
+                            "body": {
+                                "errors": "@variables('ErrorArray')",
+                                "requestId": "@variables('RequestId')",
+                                "status": "Failed"
+                            },
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "statusCode": 400
+                        },
+                        "kind": "Http",
+                        "runAfter": {
+                            "Set_catch_scope_var_-_ErrorArray": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Response"
+                    },
+                    "Filter_try_scope_errors": {
+                        "inputs": {
+                            "from": "@result('Try_Scope')",
+                            "where": "@equals(item()?['status'], 'Failed')"
+                        },
+                        "runAfter": {},
+                        "type": "Query"
+                    },
+                    "Set_catch_scope_var_-_ErrorArray": {
+                        "inputs": {
+                            "name": "ErrorArray",
+                            "value": "@outputs('Compose_catch_scope_ErrorArray')"
+                        },
+                        "runAfter": {
+                            "Compose_catch_scope_ErrorArray": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_catch_var_-_ErrorMessage": {
+                        "inputs": {
+                            "name": "ErrorMessage",
+                            "value": "@{first(body('Filter_try_scope_errors'))?['error']?.message}"
+                        },
+                        "runAfter": {
+                            "Set_catch_var_-_RequestId": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_catch_var_-_RequestId": {
+                        "inputs": {
+                            "name": "RequestId",
+                            "value": "@triggerOutputs()['relativePathParameters']['requestId']"
+                        },
+                        "runAfter": {
+                            "Filter_try_scope_errors": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "runAfter": {
+                    "Try_Scope": [
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                },
+                "type": "Scope"
+            },
+            "Init_var_-_ErrorArray": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorArray",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_ErrorMessage": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_ErrorMessage": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorMessage",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_PolicyKey": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "PolicyKey",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_RequestId": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_RequestId": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "RequestId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_ErrorArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Try_Scope": {
+                "actions": {
+                    "Condition": {
+                        "actions": {
+                            "Compose_ErrorArray": {
+                                "inputs": [
+                                    {
+                                        "message": "@body('Get_ImportPAS_Pipeline')?['message']",
+                                        "policyKey": "@variables('PolicyKey')"
+                                    }
+                                ],
+                                "runAfter": {},
+                                "type": "Compose"
+                            },
+                            "Set_try_scope_var_-_ErrorArray": {
+                                "inputs": {
+                                    "name": "ErrorArray",
+                                    "value": "@outputs('Compose_ErrorArray')"
+                                },
+                                "runAfter": {
+                                    "Compose_ErrorArray": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "SetVariable"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@body('Get_ImportPAS_Pipeline')?['status']",
+                                        "Failed"
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {
+                            "Set_try_scope_var_-_PolicyKey": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "If"
+                    },
+                    "Get_ImportPAS_Pipeline": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuredatafactory']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "@{encodeURIComponent(parameters('datafactoryId'))}/pipelineRuns/@{encodeURIComponent(variables('RequestId'))}",
+                            "queries": {
+                                "x-ms-api-version": "2017-09-01-preview"
+                            }
+                        },
+                        "runAfter": {
+                            "Set_try_scope_var_-_RequestId": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    },
+                    "Set_try_scope_var_-_PolicyKey": {
+                        "inputs": {
+                            "name": "PolicyKey",
+                            "value": "@{body('Get_ImportPAS_Pipeline')?['parameters']?.policyKey}"
+                        },
+                        "runAfter": {
+                            "Get_ImportPAS_Pipeline": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_try_scope_var_-_RequestId": {
+                        "inputs": {
+                            "name": "RequestId",
+                            "value": "@triggerOutputs()['relativePathParameters']['requestId']"
+                        },
+                        "runAfter": {},
+                        "type": "SetVariable"
+                    },
+                    "Success_Response": {
+                        "inputs": {
+                            "body": {
+                                "errors": "@variables('ErrorArray')",
+                                "requestID": "@variables('RequestId')",
+                                "status": "@body('Get_ImportPAS_Pipeline')?['status']"
+                            },
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "statusCode": 200
+                        },
+                        "kind": "Http",
+                        "runAfter": {
+                            "Condition": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Response"
+                    }
+                },
+                "runAfter": {
+                    "Init_var_-_PolicyKey": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Scope"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "object"
+            },
+            "datafactoryId": {
+                "defaultValue": "",
+                "type": "string"
+            }
+        },
+        "triggers": {
+            "request": {
+                "conditions": [],
+                "inputs": {
+                    "method": "GET",
+                    "relativePath": "/policyAdmin/import/status/{requestId}"
+                },
+                "kind": "Http",
+                "operationOptions": "EnableSchemaValidation",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuredatafactory": {
+                    "connectionId": "/subscriptions/c4ee548e-fc62-4378-9a53-90e498218252/resourceGroups/msa-devtest-uks-adf-rg/providers/Microsoft.Web/connections/azuredatafactory",
+                    "connectionName": "azuredatafactory",
+                    "id": "/subscriptions/c4ee548e-fc62-4378-9a53-90e498218252/providers/Microsoft.Web/locations/uksouth/managedApis/azuredatafactory"
+                }
+            }
+        },
+        "datafactoryId" : {
+            "value": ""
+        }
+    }
+}

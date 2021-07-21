@@ -1,0 +1,46 @@
+version: ""
+
+formatter: markdown
+
+header-from: "./.terraform-docs/header.md"
+footer-from: ""
+
+sections:
+  hide: []
+  show:
+  - header
+  - requirements
+  - providers
+  - inputs
+  - data-sources
+  - outputs
+
+content: ""
+
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+output-values:
+  enabled: false
+  from: ""
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  html: true
+  indent: 2
+  required: true
+  sensitive: true
+  type: true

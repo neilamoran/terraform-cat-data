@@ -1,0 +1,829 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Catch_Scope": {
+                "actions": {
+                    "Compose_catch_scope_ErrorArray": {
+                        "inputs": [
+                            {
+                                "message": "@variables('ErrorMessage')",
+                                "policyKey": "@triggerOutputs()['relativePathParameters']['policyKey']"
+                            }
+                        ],
+                        "runAfter": {
+                            "Set_catch_scope_var_-_ErrorMessage": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "Error_Response": {
+                        "inputs": {
+                            "body": {
+                                "errors": "@variables('ErrorArray')",
+                                "requestId": "@variables('RequestId')",
+                                "status": "Failed"
+                            },
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "statusCode": "@variables('StatusCode')"
+                        },
+                        "kind": "Http",
+                        "runAfter": {
+                            "Set_catch_scope_var_-_ErrorArray": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Response"
+                    },
+                    "Filter_try_scope_errors": {
+                        "inputs": {
+                            "from": "@result('Try_Scope')",
+                            "where": "@equals(item()?['status'], 'Failed')"
+                        },
+                        "runAfter": {},
+                        "type": "Query"
+                    },
+                    "Set_catch_scope_var_-_ErrorArray": {
+                        "inputs": {
+                            "name": "ErrorArray",
+                            "value": "@outputs('Compose_catch_scope_ErrorArray')"
+                        },
+                        "runAfter": {
+                            "Compose_catch_scope_ErrorArray": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_catch_scope_var_-_ErrorMessage": {
+                        "inputs": {
+                            "name": "ErrorMessage",
+                            "value": "@{first(body('Filter_try_scope_errors'))?['error']?.message} @{first(body('Filter_try_scope_errors'))?['outputs']?['body']?.message}"
+                        },
+                        "runAfter": {
+                            "Set_catch_scope_var_-_RequestId": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_catch_scope_var_-_RequestId": {
+                        "inputs": {
+                            "name": "RequestId",
+                            "value": "@{if(empty(body('Get_ImportPAS_Pipeline')?['runId']), split(body('Create_ImportPAS_Pipeline')?.target, '/')?[3], null)}"
+                        },
+                        "runAfter": {
+                            "Filter_try_scope_errors": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "runAfter": {
+                    "Try_Scope": [
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                },
+                "type": "Scope"
+            },
+            "Init_var_-_ErrorArray": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorArray",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_ErrorMessage": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_ErrorMessage": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorMessage",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_StatusCode": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_RequestId": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "RequestId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Init_var_-_ErrorArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Init_var_-_StatusCode": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "StatusCode",
+                            "type": "integer",
+                            "value": 400
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "properties": {
+                            "policy": {
+                                "items": {
+                                    "properties": {
+                                        "atia": {
+                                            "type": "string"
+                                        },
+                                        "inwardPolicies": {
+                                            "items": {
+                                                "properties": {
+                                                    "breakdowns": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "inwardPolicyBreakdownKey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "riskWeightings": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "riskCode": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "weighting": {
+                                                                                "type": "number"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "riskCode",
+                                                                            "weighting"
+                                                                        ],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardPolicyBreakdownKey",
+                                                                "riskWeightings"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "insuredDomicile": {
+                                                        "type": "string"
+                                                    },
+                                                    "limits": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "basisOfLimitsCode": {
+                                                                    "type": "string"
+                                                                },
+                                                                "inwardpolicybreakdownkey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "limitsTypeCode": {
+                                                                    "type": "string"
+                                                                },
+                                                                "oneHundredPrecentPremiumCurrencyAmount": {
+                                                                    "type": "number"
+                                                                },
+                                                                "ourSharePremiumCurrencyAmount": {
+                                                                    "type": "number"
+                                                                },
+                                                                "premiumCurrency": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardpolicybreakdownkey",
+                                                                "basisOfLimitsCode",
+                                                                "limitsTypeCode",
+                                                                "premiumCurrency",
+                                                                "oneHundredPrecentPremiumCurrencyAmount",
+                                                                "ourSharePremiumCurrencyAmount"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "policyShares": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "calculatedLinePercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "estimatedOrderPercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "inwardPolicyShareKey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "lineIndicator": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "signedLinePercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "signedOrderPercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "writtenLinePercentage": {
+                                                                    "type": "number"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardPolicyShareKey",
+                                                                "writtenLinePercentage",
+                                                                "estimatedOrderPercentage",
+                                                                "lineIndicator",
+                                                                "signedLinePercentage",
+                                                                "signedOrderPercentage",
+                                                                "calculatedLinePercentage"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "insuredDomicile",
+                                                    "breakdowns",
+                                                    "limits",
+                                                    "policyShares"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "methodOfAcceptance": {
+                                            "type": "string"
+                                        },
+                                        "nbcrCode": {
+                                            "type": "string"
+                                        },
+                                        "nbcrDescription": {
+                                            "type": "string"
+                                        },
+                                        "outwardReinsurancePolicyKeys": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "parties": {
+                                            "items": {
+                                                "properties": {
+                                                    "organisationCode": {
+                                                        "type": "string"
+                                                    },
+                                                    "organisationName": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyCode": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyName": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyRole": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "partyRole",
+                                                    "partyCode",
+                                                    "partyName",
+                                                    "organisationCode",
+                                                    "organisationName"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "pasLastUpdate": {
+                                            "type": "string"
+                                        },
+                                        "pasStatus": {
+                                            "type": "string"
+                                        },
+                                        "policyDescription": {
+                                            "type": "string"
+                                        },
+                                        "policyExpiryDate": {
+                                            "type": "string"
+                                        },
+                                        "policyInceptionDate": {
+                                            "type": "string"
+                                        },
+                                        "policyKey": {
+                                            "type": "string"
+                                        },
+                                        "policyNarrative": {
+                                            "type": "string"
+                                        },
+                                        "policyReference": {
+                                            "type": "string"
+                                        },
+                                        "sourceBusinessSegmentation": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "sourceSystem": {
+                                            "type": "string"
+                                        },
+                                        "tripra": {
+                                            "type": "string"
+                                        },
+                                        "trustFundTypeCodes": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "underwritingYear": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "policyKey",
+                                        "policyReference",
+                                        "sourceSystem",
+                                        "methodOfAcceptance",
+                                        "pasStatus",
+                                        "underwritingYear",
+                                        "policyDescription",
+                                        "policyInceptionDate",
+                                        "policyExpiryDate",
+                                        "nbcrCode",
+                                        "nbcrDescription",
+                                        "tripra",
+                                        "atia",
+                                        "pasLastUpdate",
+                                        "policyNarrative",
+                                        "parties",
+                                        "inwardPolicies",
+                                        "sourceBusinessSegmentation",
+                                        "outwardReinsurancePolicyKeys",
+                                        "trustFundTypeCodes"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Init_var_-_RequestId": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Try_Scope": {
+                "actions": {
+                    "Condition": {
+                        "actions": {
+                            "Compose_ErrorArray": {
+                                "inputs": [
+                                    {
+                                        "message": "@body('Get_ImportPAS_Pipeline')?['message']",
+                                        "policyKey": "@triggerOutputs()['relativePathParameters']['policyKey']"
+                                    }
+                                ],
+                                "runAfter": {},
+                                "type": "Compose"
+                            },
+                            "Set_try_scope_var_-_ErrorArray": {
+                                "inputs": {
+                                    "name": "ErrorArray",
+                                    "value": "@outputs('Compose_ErrorArray')"
+                                },
+                                "runAfter": {
+                                    "Compose_ErrorArray": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "SetVariable"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@body('Get_ImportPAS_Pipeline')?['status']",
+                                        "Failed"
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {
+                            "Set_try_scope_var_-_RequestId": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "If"
+                    },
+                    "Create_ImportPAS_Pipeline": {
+                        "inputs": {
+                            "body": {
+                                "PASObject": "@body('Parse_JSON')",
+                                "PolicyKey": "@triggerOutputs()['relativePathParameters']['policyKey']"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuredatafactory']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "@{encodeURIComponent(parameters('datafactoryId'))}/pipelines/@{encodeURIComponent('ProcessPASImportPipeline')}/CreateRun",
+                            "queries": {
+                                "x-ms-api-version": "2017-09-01-preview"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    },
+                    "Get_ImportPAS_Pipeline": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuredatafactory']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "@{encodeURIComponent(parameters('datafactoryId'))}/pipelineRuns/@{encodeURIComponent(body('Create_ImportPAS_Pipeline')?['runId'])}",
+                            "queries": {
+                                "x-ms-api-version": "2017-09-01-preview"
+                            }
+                        },
+                        "runAfter": {
+                            "Create_ImportPAS_Pipeline": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    },
+                    "Set_try_scope_var_-_RequestId": {
+                        "inputs": {
+                            "name": "RequestId",
+                            "value": "@body('Get_ImportPAS_Pipeline')?['runId']"
+                        },
+                        "runAfter": {
+                            "Get_ImportPAS_Pipeline": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Success_Response": {
+                        "inputs": {
+                            "body": {
+                                "errors": "@variables('ErrorArray')",
+                                "requestId": "@variables('RequestId')",
+                                "status": "@body('Get_ImportPAS_Pipeline')?['status']"
+                            },
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "statusCode": 200
+                        },
+                        "kind": "Http",
+                        "runAfter": {
+                            "Condition": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Response"
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Scope"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "object"
+            },
+            "datafactoryId": {
+                "defaultValue": "",
+                "type": "string"
+            }
+        },
+        "triggers": {
+            "request": {
+                "conditions": [],
+                "inputs": {
+                    "method": "PUT",
+                    "relativePath": "/policyAdmin/import/{policyKey}",
+                    "schema": {
+                        "properties": {
+                            "policy": {
+                                "items": {
+                                    "properties": {
+                                        "atia": {
+                                            "type": "string"
+                                        },
+                                        "inwardPolicies": {
+                                            "items": {
+                                                "properties": {
+                                                    "breakdowns": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "inwardPolicyBreakdownKey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "riskWeightings": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "riskCode": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "weighting": {
+                                                                                "type": "number"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "riskCode",
+                                                                            "weighting"
+                                                                        ],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardPolicyBreakdownKey",
+                                                                "riskWeightings"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "insuredDomicile": {
+                                                        "type": "string"
+                                                    },
+                                                    "limits": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "basisOfLimitsCode": {
+                                                                    "type": "string"
+                                                                },
+                                                                "inwardpolicybreakdownkey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "limitsTypeCode": {
+                                                                    "type": "string"
+                                                                },
+                                                                "oneHundredPrecentPremiumCurrencyAmount": {
+                                                                    "type": "number"
+                                                                },
+                                                                "ourSharePremiumCurrencyAmount": {
+                                                                    "type": "number"
+                                                                },
+                                                                "premiumCurrency": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardpolicybreakdownkey",
+                                                                "basisOfLimitsCode",
+                                                                "limitsTypeCode",
+                                                                "premiumCurrency",
+                                                                "oneHundredPrecentPremiumCurrencyAmount",
+                                                                "ourSharePremiumCurrencyAmount"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "policyShares": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "calculatedLinePercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "estimatedOrderPercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "inwardPolicyShareKey": {
+                                                                    "type": "string"
+                                                                },
+                                                                "lineIndicator": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "signedLinePercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "signedOrderPercentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "writtenLinePercentage": {
+                                                                    "type": "number"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "inwardPolicyShareKey",
+                                                                "writtenLinePercentage",
+                                                                "estimatedOrderPercentage",
+                                                                "lineIndicator",
+                                                                "signedLinePercentage",
+                                                                "signedOrderPercentage",
+                                                                "calculatedLinePercentage"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "insuredDomicile",
+                                                    "breakdowns",
+                                                    "limits",
+                                                    "policyShares"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "methodOfAcceptance": {
+                                            "type": "string"
+                                        },
+                                        "nbcrCode": {
+                                            "type": "string"
+                                        },
+                                        "nbcrDescription": {
+                                            "type": "string"
+                                        },
+                                        "outwardReinsurancePolicyKeys": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "parties": {
+                                            "items": {
+                                                "properties": {
+                                                    "organisationCode": {
+                                                        "type": "string"
+                                                    },
+                                                    "organisationName": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyCode": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyName": {
+                                                        "type": "string"
+                                                    },
+                                                    "partyRole": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "partyRole",
+                                                    "partyCode",
+                                                    "partyName",
+                                                    "organisationCode",
+                                                    "organisationName"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "pasLastUpdate": {
+                                            "type": "string"
+                                        },
+                                        "pasStatus": {
+                                            "type": "string"
+                                        },
+                                        "policyDescription": {
+                                            "type": "string"
+                                        },
+                                        "policyExpiryDate": {
+                                            "type": "string"
+                                        },
+                                        "policyInceptionDate": {
+                                            "type": "string"
+                                        },
+                                        "policyKey": {
+                                            "type": "string"
+                                        },
+                                        "policyNarrative": {
+                                            "type": "string"
+                                        },
+                                        "policyReference": {
+                                            "type": "string"
+                                        },
+                                        "sourceBusinessSegmentation": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "sourceSystem": {
+                                            "type": "string"
+                                        },
+                                        "tripra": {
+                                            "type": "string"
+                                        },
+                                        "trustFundTypeCodes": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "underwritingYear": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "policyKey",
+                                        "policyReference",
+                                        "sourceSystem",
+                                        "methodOfAcceptance",
+                                        "pasStatus",
+                                        "underwritingYear",
+                                        "policyDescription",
+                                        "policyInceptionDate",
+                                        "policyExpiryDate",
+                                        "nbcrCode",
+                                        "nbcrDescription",
+                                        "tripra",
+                                        "atia",
+                                        "pasLastUpdate",
+                                        "policyNarrative",
+                                        "parties",
+                                        "inwardPolicies",
+                                        "sourceBusinessSegmentation",
+                                        "outwardReinsurancePolicyKeys",
+                                        "trustFundTypeCodes"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "operationOptions": "EnableSchemaValidation",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuredatafactory": {
+                    "connectionId": "/subscriptions/c4ee548e-fc62-4378-9a53-90e498218252/resourceGroups/msa-devtest-uks-adf-rg/providers/Microsoft.Web/connections/azuredatafactory",
+                    "connectionName": "azuredatafactory",
+                    "id": "/subscriptions/c4ee548e-fc62-4378-9a53-90e498218252/providers/Microsoft.Web/locations/uksouth/managedApis/azuredatafactory"
+                }
+            }
+        }
+    }
+}

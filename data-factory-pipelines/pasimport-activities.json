@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Stored procedure1",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+            "timeout": "7.00:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureOutput": false,
+            "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+            "storedProcedureName": "[[dbo].[pr_InstanceImportPASFromAPI]",
+            "storedProcedureParameters": {
+                "PolicyKey": {
+                    "value": {
+                        "value": "@pipeline().parameters.PolicyKey",
+                        "type": "Expression"
+                    },
+                    "type": "String"
+                },
+                "JsonInput": {
+                    "value": {
+                        "value": "@string(pipeline().parameters.PASObject)",
+                        "type": "Expression"
+                    },
+                    "type": "String"
+                }
+            }
+        },
+        "linkedServiceName": {
+            "referenceName": "${linked_sql_service_name}",
+            "type": "LinkedServiceReference",
+            "parameters": {
+                "DBName": "MIGRATION_DUMMY_MODEL_BUILDER",
+                "ServerName": "msa-dev-sql2"
+            }
+        }
+    }
+]
