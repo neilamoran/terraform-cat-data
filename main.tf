@@ -14,17 +14,17 @@ resource "random_string" "random" {
   special = false
 }
 
-module "vm" {
-  source = "git::git@ssh.dev.azure.com:v3/rpc-tyche/Cognizant/tf-module-azure-vm"
-  name = join("-", [
-    var.name,
-    "shir"
-  ])
-  resource_group_name = azurerm_resource_group.rg.name
-  subnet_id           = data.azurerm_subnet.subnet.id
-  server_type         = "web"
-  custom_data         = local.shir_install_script
-}
+# module "vm" {
+#   source = "git::git@ssh.dev.azure.com:v3/rpc-tyche/Cognizant/tf-module-azure-vm"
+#   name = join("-", [
+#     var.name,
+#     "shir"
+#   ])
+#   resource_group_name = azurerm_resource_group.rg.name
+#   subnet_id           = data.azurerm_subnet.subnet.id
+#   server_type         = "web"
+#   custom_data         = local.shir_install_script
+# }
 
 resource "azurerm_data_factory" "adf" {
   name = join("-", [
@@ -64,13 +64,12 @@ resource "azurerm_data_factory_pipeline" "pasimport" {
   }
 }
 
-resource "time_sleep" "wait_for_shir_install" {
-  create_duration = "300s"
-  depends_on = [
-    module.vm
-  ]
-
-}
+# resource "time_sleep" "wait_for_shir_install" {
+#   create_duration = "300s"
+#   depends_on = [
+#     module.vm
+#   ]
+# }
 
 resource "azurerm_data_factory_linked_service_sql_server" "sql" {
   for_each                 = var.linked_sql_server
@@ -78,10 +77,10 @@ resource "azurerm_data_factory_linked_service_sql_server" "sql" {
   resource_group_name      = azurerm_resource_group.rg.name
   data_factory_name        = azurerm_data_factory.adf.name
   connection_string        = each.value
-  integration_runtime_name = azurerm_data_factory_integration_runtime_self_hosted.shir.name
-  depends_on = [
-      time_sleep.wait_for_shir_install
-  ]
+  integration_runtime_name = "AutoResolveIntegrationRuntime"
+#   depends_on = [
+#       time_sleep.wait_for_shir_install
+#   ]
 }
 
 # resource "azurerm_logic_app_workflow" "pasimport" {
